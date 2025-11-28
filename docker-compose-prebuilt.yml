@@ -1,0 +1,151 @@
+# =============================================================================
+# Docker Compose for VC AI Knowledge Hub (Pre-built JAR version)
+# =============================================================================
+# Use this version for faster deployments when JAR is already built
+# Requires: mvn clean package -DskipTests before running
+
+services:
+  # PostgreSQL with pgvector extension
+  postgres:
+    image: ankane/pgvector:latest
+    container_name: vc_postgres
+    environment:
+      POSTGRES_DB: vc_ai_knowledge_hub
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-root}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backups:/backups
+    networks:
+      - vc_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Embedding Service (Sentence Transformers)
+  embedding_service:
+    build:
+      context: .
+      dockerfile: Dockerfile.embedding
+    container_name: vc_embedding_service
+    environment:
+      MODEL_NAME: ${EMBEDDING_MODEL:-all-MiniLM-L6-v2}
+      PORT: 8000
+    ports:
+      - "${EMBEDDING_PORT:-8000}:8000"
+    networks:
+      - vc_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+
+  # Spring Boot Application (using pre-built JAR)
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.prebuilt
+      dockerfile_inline: |
+        FROM eclipse-temurin:21-jre-alpine
+        WORKDIR /app
+        RUN apk add --no-cache curl
+        RUN addgroup -g 1001 -S appuser && adduser -u 1001 -S appuser -G appuser
+        COPY target/ntsal_ai_knowledge_hub-0.0.1-SNAPSHOT.jar app.jar
+        RUN ls -lh /app/app.jar && echo "JAR copied successfully"
+        RUN mkdir -p /app/logs /app/temp && chown -R appuser:appuser /app
+        USER appuser
+        EXPOSE 8080
+        HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+            CMD curl -f http://localhost:8080/api/ai/health || exit 1
+        ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom"
+        ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+    container_name: vc_app
+    environment:
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/vc_ai_knowledge_hub
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-root}
+
+      # JPA/Hibernate
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_JPA_SHOW_SQL: ${SHOW_SQL:-false}
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+
+      # Liquibase
+      SPRING_LIQUIBASE_ENABLED: "true"
+      SPRING_LIQUIBASE_CHANGE_LOG: classpath:db/ntsal_ai_knowledge_hub.xml
+
+      # Embedding Service
+      EMBEDDING_SERVICE_URL: http://embedding_service:8000
+
+      # MCP (disabled by default)
+      MCP_ENABLED: ${MCP_ENABLED:-false}
+      MCP_SERVER_URL: ${MCP_SERVER_URL:-http://localhost:3000}
+
+      # Java Options
+      JAVA_OPTS: ${JAVA_OPTS:--Xmx1024m -Xms512m}
+
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      embedding_service:
+        condition: service_healthy
+    networks:
+      - vc_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/api/ai/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 512M
+
+  # MCP Server (for advanced SQL queries)
+  mcp_server:
+    image: crystaldba/postgres-mcp:latest
+    container_name: vc_mcp_server
+    environment:
+      DATABASE_URI: postgresql://postgres:${POSTGRES_PASSWORD:-root}@postgres:5432/vc_ai_knowledge_hub
+    ports:
+      - "${MCP_PORT:-3000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - vc_network
+    command: >
+      --access-mode=unrestricted
+      --transport=sse
+      postgresql://postgres:${POSTGRES_PASSWORD:-root}@postgres:5432/vc_ai_knowledge_hub
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  vc_network:
+    driver: bridge
+

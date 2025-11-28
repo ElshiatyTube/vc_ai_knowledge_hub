@@ -1,0 +1,49 @@
+# =============================================================================
+# Dockerfile for NTSAL AI Knowledge Hub (Pre-built JAR version)
+# =============================================================================
+# This Dockerfile assumes the JAR is already built locally
+# Use this for faster builds in production where JAR is pre-built
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+
+# Install curl for healthchecks
+RUN apk add --no-cache curl
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S appuser && \
+    adduser -u 1001 -S appuser -G appuser
+
+# Copy the pre-built JAR (assumes it's built locally first)
+# The JAR file must be in target/ directory in the build context
+ARG JAR_FILE=target/ntsal_ai_knowledge_hub-0.0.1-SNAPSHOT.jar
+COPY ${JAR_FILE} app.jar
+
+# Verify JAR was copied successfully
+RUN ls -lh /app/app.jar && echo "JAR file copied successfully"
+
+# Create directories for logs and temp
+RUN mkdir -p /app/logs /app/temp && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose application port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/api/ai/health || exit 1
+
+# JVM options for container environment
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+               -XX:MaxRAMPercentage=75.0 \
+               -XX:InitialRAMPercentage=50.0 \
+               -XX:+UseG1GC \
+               -XX:+UseStringDeduplication \
+               -Djava.security.egd=file:/dev/./urandom"
+
+# Run the application
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+

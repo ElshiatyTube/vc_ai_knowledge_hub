@@ -1,0 +1,52 @@
+erDiagram
+    GITHUB_REPO {
+        bigint id PK
+        varchar name
+        varchar user
+        varchar branch
+    }
+    COMMIT {
+        bigint id PK
+        varchar commit_hash
+        varchar author
+        varchar message
+        text diff_text
+        text summary_text
+        USER-DEFINED embedding_vector
+        timestamp committed_date
+        bigint github_repo_id FK
+    }
+    CONFIGS {
+        bigint id PK
+        varchar github_token
+        text llm_api_key
+        varchar llm_model
+        varchar llm_summarizer_url
+        timestamp created_at
+    }
+    DATABASECHANGELOG {
+        varchar id PK
+        varchar author
+        varchar filename
+        timestamp dateexecuted
+        integer orderexecuted
+        varchar exectype
+        varchar md5sum
+        varchar description
+        varchar comments
+        varchar tag
+        varchar liquibase
+        varchar contexts
+        varchar labels
+        varchar deployment_id
+    }
+    DATABASECHANGELOGLOCK {
+        integer id PK
+        boolean locked
+        timestamp lockgranted
+        varchar lockedby
+    }
+
+    GITHUB_REPO ||--o{ COMMIT : "has commits"
+    COMMIT }|..|{ GITHUB_REPO : "references repo"
+

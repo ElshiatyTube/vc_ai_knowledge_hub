@@ -1,0 +1,44 @@
+# Minimal .dockerignore for pre-built JAR builds
+# This allows the target/ directory to be copied into Docker
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts (but NOT target - we need it!)
+build/
+dist/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+docs/
+
+# Config
+.env
+.env.*.local
+
+# Scripts
+*.sh
+deploy.sh
+restart_app.sh
+
+# Logs
+logs/
+*.log
+
+# Others
+node_modules/
+.npm/
+
