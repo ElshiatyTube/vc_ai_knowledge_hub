@@ -299,13 +299,4 @@ For questions or suggestions, please open an issue on GitHub.
 
 **Status:** ✅ Production Ready
 
-**Web portal Screenshots:**
-<img width="2048" height="1133" alt="Screenshot from 2025-11-24 18-37-17" src="https://github.com/user-attachments/assets/0653c448-6dfc-4542-947c-38a07f16114b" />
-<img width="2048" height="1133" alt="Screenshot from 2025-11-24 18-04-19" src="https://github.com/user-attachments/assets/db6ba8a1-4c53-4cad-a027-87fcf434d52e" />
-<img width="2048" height="1133" alt="Screenshot from 2025-11-24 12-03-29" src="https://github.com/user-attachments/assets/ffa01624-e0ac-4739-908f-b33d65339458" />
-<img width="2048" height="1133" alt="Screenshot from 2025-11-24 12-00-38" src="https://github.com/user-attachments/assets/febc3ed1-61cd-425b-8609-edc38be3c611" />
-<img width="2048" height="1133" alt="Screenshot from 2025-11-24 11-57-32" src="https://github.com/user-attachments/assets/c6d782e9-66bb-43e4-bf14-93b9274cd529" />
-<img width="2048" height="1130" alt="Screenshot from 2025-11-23 16-37-44" src="https://github.com/user-attachments/assets/848ae15e-3323-4f49-bf7b-61d99c64deac" />
-<img width="2015" height="1067" alt="Screenshot from 2025-11-20 20-13-32" src="https://github.com/user-attachments/assets/1cc4a637-8ee7-4ecd-acb3-df0b67d80c7f" />
-
 
