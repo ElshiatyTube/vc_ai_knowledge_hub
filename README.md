@@ -89,12 +89,14 @@ Content-Type: application/json
 
 | Query | Type | Description |
 |-------|------|-------------|
+| "Give me feedback about John's work." | Hybrid | SQL filter + semantic search
 | "How many commits?" | SQL | Total count |
 | "How many commits did John make?" | SQL | Author-specific with fuzzy matching |
 | "Find commits about authentication" | Semantic | Meaning-based search |
 | "What changed in commit abc123?" | Retrieval | Specific commit details |
 | "Show me John's bug fixes" | Hybrid | SQL filter + semantic search |
 | "Commits from last week" | SQL | Date-based queries |
+
 
 ## 🎯 Key Components
 
